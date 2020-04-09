@@ -1,3 +1,9 @@
+//var
+let videoTrack = null;
+let audioTrack = null;
+let session = null;
+let streams = new Map();
+
 //utils
 const $ = document.querySelector.bind(document);
 
@@ -98,7 +104,6 @@ function browserDetect() {
     chromeVersion: parseInt(result.chromeVersion)
   }
 }
-
 // audiooutput,audioinput,videoinput,all
 async function getDevices(type) {
   const devices = await navigator.mediaDevices.enumerateDevices();
@@ -186,8 +191,138 @@ function blocker(secodes) {
   })
 }
 
-//event
 
+
+//webrtc part
+async function initSession(username, room) {
+  const signalServer = `ws://127.0.0.1:8800`;
+
+  const tokenId = randomId(10);
+  session = new Dugon.Session(signalServer, room, tokenId, {
+    metadata: {
+      username
+    }
+  });
+
+  session.onin = (tokenId, metadata) => {
+    console.log(tokenId, ' in');
+
+    const stream = new MediaStream();
+    streams.set(tokenId,stream);
+  };
+
+  session.onout = tokenId => {
+    console.log(tokenId, ' out');
+
+    //FIXME: maybe release stream?
+    // streams.delete(tokenId);
+  };
+
+  session.onclose = _ => {
+
+  };
+
+  session.onsender = sender => {
+    // session.unpublish(sender);
+    // if (sender.id == videoTrack.id) {
+    //   session.unpublish(sender);
+    // }
+  };
+
+
+  session.ontrack = (track, receiver) => {
+    console.log('ontrack');
+
+    const stream = streams.get(receiver.tokenId);
+    console.log(stream);
+    if($(`#videoBox-${receiver.tokenId}`)){
+      stream.addTrack(track);
+    }else{
+      const videoBox = document.createElement('div');
+      videoBox.id = `videoBox-${receiver.tokenId}`;
+      videoBox.classList.add('videoBox');
+      
+      const newVideo = document.createElement('video');
+      newVideo.autoplay = true;
+
+      stream.addTrack(track);
+      newVideo.srcObject = stream;
+      videoBox.append(newVideo);
+
+      $('#videoList').append(videoBox);
+    }
+  }
+
+  session.onreceiver = (receiver, tokenId, producerId, metadata) => {
+    session.subscribe(receiver);
+  };
+
+  session.onunreceiver = (receiver) => {
+    console.log('onunreceiver');
+    
+
+    const stream = streams.get(receiver.tokenId);
+    stream.removeTrack(stream.getTrackById(receiver.receiverId));
+    if(stream.getTracks().length === 0){
+      $(`#videoBox-${receiver.tokenId}`).remove();
+      streams.delete(receiver.tokenId);
+    }
+  };
+
+  await session.init({ pub: true, sub: true });
+
+  if (audioTrack) {
+    session.publish(audioTrack);
+  }
+
+  if (videoTrack) {
+    session.publish(videoTrack);
+  }
+}
+
+//animation
+async function animation() {
+
+  $("#maskLayer").classList.add("disappear");
+  await blocker(0.5);
+  $("#maskLayer").style.display = 'none';
+
+  $("#itemList").classList.add("fadein");
+
+  $("#myselfItem").classList.add("slidein");
+
+  await blocker(0.5);
+
+  $("#participantItem").classList.add("slidein");
+
+  await blocker(0.8);
+
+  $("#participantsContent").style.maxHeight = calcContentHeight() + 'px';
+
+  let times = 200;
+  let step = calcContentHeight() / times;
+  let index = 0;
+  let height = 0;
+  let frame = 4;
+  let id = setInterval(function () {
+    if (index < times) {
+      index++;
+      height += step;
+      $("#participantsContent").style.height = height + 'px';
+    } else {
+      clearInterval(id);
+    }
+  }, frame);
+
+  $("#chatItem").classList.add("slidein");
+
+  $("#pollItem").classList.add("slidein");
+
+  await blocker(0.8)
+  $("#videoList").classList.add("fadein");
+}
+
+//event
 function drawerEventListen() {
   const drawers = document.querySelectorAll(".drawer");
 
@@ -228,55 +363,21 @@ async function loginEnter(event) {
       room = $('#roomInput').value;
     }
 
-    $("#maskLayer").classList.add("disappear");
-    await blocker(0.5);
-    $("#maskLayer").style.display = 'none';
-
-
-    $("#itemList").classList.add("fadein");
-
-    // await blocker(0.5);
-
-    $("#myselfItem").classList.add("slidein");
-
-    await blocker(0.5);
-
-    $("#participantItem").classList.add("slidein");
-
-    await blocker(0.8);
-
-    // $("#participantsContent").style.maxHeight = calcContentHeight() + 'px';
-
-
-    $("#participantsContent").style.maxHeight = calcContentHeight() + 'px';
-
-    let times = 200;
-    let step = calcContentHeight() / times;
-    let index = 0;
-    let height = 0;
-    let frame = 4;
-    let id = setInterval(function () {
-      if (index++ < times) {
-        height += step;
-        $("#participantsContent").style.height = height + 'px';
-      } else {
-        clearInterval(id);
-      }
-    }, frame);
-
-    $("#chatItem").classList.add("slidein");
-
-    $("#pollItem").classList.add("slidein");
-
-    await blocker(0.8)
-    $("#videoList").classList.add("fadein");
+    await animation();
+    await initSession(username, room);
 
   }
 }
 
-
 //
 window.onload = async _ => {
+  const { name: browserName, version, versionString, chromeVersion } = browserDetect();
+  const supportingVersion = 80;
+  if (browserName != 'Chrome') {
+    alert('Only supporting Chrome.');
+  } else if (version < supportingVersion) {
+    alert(`Only supporting Chrome M${supportingVersion}+.`);
+  }
 
   //register some events
   storeValue('#usernameInput');
@@ -286,7 +387,6 @@ window.onload = async _ => {
   $('#roomInput').onkeydown = loginEnter;
 
   drawerEventListen();
-
 
   // devices
   const videoDevices = await getDevices('videoinput');
@@ -306,6 +406,12 @@ window.onload = async _ => {
   if (video || audio) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: video, audio: audio });
+      if (video) {
+        [videoTrack] = stream.getVideoTracks();
+      }
+      if (audio) {
+        [audioTrack] = stream.getAudioTracks();
+      }
       $('#localVideo').srcObject = stream;
     } catch (e) {
       alert('Local devices was banned.Check your Chrome Settings.');
