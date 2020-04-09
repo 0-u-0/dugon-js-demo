@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="main.css">
+  <title>Document</title>
+</head>
+
+<body>
+  <div id="app">
+    <div id="maskLayer" style="display: none;">
+      <div id="loginBox">
+        <input class="loginInput" id="usernameInput" placeholder="Username | Random"><br>
+        <input class="loginInput" id="roomInput" placeholder="Room | Random">
+      </div>
+    </div>
+
+    <div id="backVideo">
+      <video id="localVideo" autoplay></video>
+    </div>
+    <div id="itemList" style="opacity: 1;">
+
+      <div id="myselfItem" class="item">
+        <div id="myselfLabel" class="label">
+          <div class="textVertical">
+            <img src="images/user.png"><span class="labelText">My Name </span>
+            <span class="imagesBox">
+              <img src="images/webcam.png"><img src="images/mic.png">
+            </span>
+
+          </div>
+        </div>
+      </div>
+
+
+      <div id="participantsItem" class="item">
+        <div id="participantsLabel" class="drawer label">
+          <div class="textVertical">
+            <img src="images/users.png"><span class="labelText">Participants</span>
+          </div>
+        </div>
+        <div id="participantsContent" class="content">
+        </div>
+      </div>
+
+      <div id="chatItem" class="item">
+        <div id="chatLabel" class="drawer label">
+          <div class="textVertical">
+            <img src="images/chat.png"><span class="labelText">Chat</span>
+          </div>
+        </div>
+        <div class="content">
+          <div></div>
+        </div>
+      </div>
+
+      <div id="pollItem" class="item">
+        <div id="pollLabel" class="drawer label">
+          <div class="textVertical">
+            <img src="images/poll.png"><span class="labelText">Poll</span>
+          </div>
+        </div>
+        <div class="content">
+          <p></p>
+        </div>
+      </div>
+
+    </div>
+    <div id="videoList" style="opacity: 0;">
+      <div class="videoBox">
+      </div>
+      <div class="videoBox">
+      </div>
+      <div class="videoBox">
+      </div>
+
+
+    </div>
+    <script src="dugon.js"></script>
+    <script src="index.js"></script>
+</body>
+
+</html>
