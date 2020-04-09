@@ -51,7 +51,7 @@ body,
 }
 
 .item{
-  /* margin-top: var(--item-fake-margin); */
+  margin-top: var(--item-fake-margin);
 }
 
 .fadein {
@@ -144,7 +144,6 @@ body,
 .label {
   position: relative;
   z-index: 1;
-
   border-radius: 8px;
   height: var(--label-height);
   background-color: #777;
@@ -162,7 +161,6 @@ body,
 .textVertical{
   width: 170px;
   display: table-cell;
-  vertical-align: middle; 
   height: 40px;
   padding-left: 10px;
   vertical-align: middle;
@@ -170,6 +168,8 @@ body,
   text-align: left;
   /* margin-left: 5px; */
 }
+
+
 
 .imagesBox{
   left:180px;
@@ -189,6 +189,8 @@ img {
 .labelText{
   vertical-align:middle;
   margin-left:8px;
+  font-weight: bold;
+  font-size: 14px;
 }
 
 
@@ -217,11 +219,10 @@ img {
   margin-top: -4px;
   border-radius: 0px 0px 8px 8px;
   height: 100%;
-  padding: 0 18px;
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.2s ease-out;
-  background-color: rgba(255,255,255,1);
+  background-color: rgba(255,255,255,0.8);
   overflow:auto;
 
   box-shadow: 2px 2px 2px #777777;
@@ -281,4 +282,16 @@ img {
   text-shadow: 0.5px 1.0px #558ABB;
   border: 1px grey solid;
 
+}
+
+/*
+*/
+#participantSearch{
+  background-color: #D4D4D4; 
+  padding: 7px;
+  width: 190px;
+  border: 1px #aaaaaa solid;
+  background-image:url('./images/search.png');
+  background-repeat:no-repeat;
+  background-position:right 8px center;outline:0;
 }

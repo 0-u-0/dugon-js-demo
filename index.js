@@ -103,7 +103,7 @@ async function loginEnter(event) {
 
     await blocker(0.5);
 
-    $("#participantsItem").classList.add("slidein");
+    $("#participantItem").classList.add("slidein");
 
     await blocker(0.8);
 

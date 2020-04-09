@@ -10,7 +10,7 @@
 
 <body>
   <div id="app">
-    <div id="maskLayer" style="display: none;">
+    <div id="maskLayer">
       <div id="loginBox">
         <input class="loginInput" id="usernameInput" placeholder="Username | Random"><br>
         <input class="loginInput" id="roomInput" placeholder="Room | Random">
@@ -20,7 +20,7 @@
     <div id="backVideo">
       <video id="localVideo" autoplay></video>
     </div>
-    <div id="itemList" style="opacity: 1;">
+    <div id="itemList" style="opacity: 0;">
 
       <div id="myselfItem" class="item">
         <div id="myselfLabel" class="label">
@@ -35,13 +35,31 @@
       </div>
 
 
-      <div id="participantsItem" class="item">
+      <div id="participantItem" class="item">
         <div id="participantsLabel" class="drawer label">
           <div class="textVertical">
             <img src="images/users.png"><span class="labelText">Participants</span>
           </div>
         </div>
-        <div id="participantsContent" class="content">
+        <div id="participantsContent" class="content" style="height: 300px;max-height: 300px;">
+          <div style="margin-top: 20px;"> 
+            <input id="participantSearch" placeholder="Find guests">
+          </div>
+          <div id="participantList" style="margin-top: 10px;">
+            <div style="text-align: left;margin-left: 10px;margin-top: 3px;">
+              <img src="images/participant.png"><span class="labelText">My Name </span>
+              <span class="imagesBox">
+                <img src="images/webcam.png"><img src="images/mic.png">
+              </span>
+            </div>
+            <div style="text-align: left;margin-left: 10px;margin-top: 3px;">
+              <img src="images/participant.png"><span class="labelText">My Name </span>
+              <span class="imagesBox">
+                <img src="images/webcam.png"><img src="images/mic.png">
+              </span>
+            </div>
+          </div>
+
         </div>
       </div>
 
