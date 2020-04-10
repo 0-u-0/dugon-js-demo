@@ -6,6 +6,7 @@
   --list-height: 84%;
 
   --item-margin:  20px;
+  /* --item-fake-margin:  20px; */
   --item-fake-margin:  10000px;
 
   --label-height: 40px;
@@ -300,4 +301,10 @@ img {
   background-image:url('./images/search.png');
   background-repeat:no-repeat;
   background-position:right 8px center;outline:0;
+}
+
+.participantRow{
+  text-align: left;
+  margin-left: 10px;
+  margin-top: 3px;
 }

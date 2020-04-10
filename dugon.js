@@ -2218,8 +2218,8 @@
 	    console.log('notification: ', event, data);
 	    switch (event) {
 	      case 'join': {
-	        let { tokenId } = data;
-	        this.onin(tokenId);
+	        let { tokenId, metadata } = data;
+	        this.onin(tokenId, metadata);
 	        break;
 	      }      case 'leave': {
 	        let { tokenId } = data;

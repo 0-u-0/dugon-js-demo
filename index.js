@@ -192,6 +192,18 @@ function blocker(secodes) {
 }
 
 
+function generateParticipantRow(tokenId, username) {
+  const participantRow = document.createElement('div');
+  participantRow.classList.add('participantRow');
+  participantRow.id = `participantRow-${tokenId}`;
+  participantRow.innerHTML = `
+  <img src="images/participant.png"><span class="labelText">${username} </span>
+  <span class="imagesBox">
+    <img src="images/webcam.png"><img src="images/mic.png">
+  </span>`;
+
+  $('#participantList').append(participantRow);
+}
 
 //webrtc part
 async function initSession(username, room) {
@@ -207,13 +219,18 @@ async function initSession(username, room) {
   session.onin = (tokenId, metadata) => {
     console.log(tokenId, ' in');
 
+    const { username } = metadata;
+
+    generateParticipantRow(tokenId, username);
+
     const stream = new MediaStream();
-    streams.set(tokenId,stream);
+    streams.set(tokenId, stream);
   };
 
   session.onout = tokenId => {
     console.log(tokenId, ' out');
 
+    $(`#participantRow-${tokenId}`).remove();
     //FIXME: maybe release stream?
     // streams.delete(tokenId);
   };
@@ -235,13 +252,13 @@ async function initSession(username, room) {
 
     const stream = streams.get(receiver.tokenId);
     console.log(stream);
-    if($(`#videoBox-${receiver.tokenId}`)){
+    if ($(`#videoBox-${receiver.tokenId}`)) {
       stream.addTrack(track);
-    }else{
+    } else {
       const videoBox = document.createElement('div');
       videoBox.id = `videoBox-${receiver.tokenId}`;
       videoBox.classList.add('videoBox');
-      
+
       const newVideo = document.createElement('video');
       newVideo.autoplay = true;
 
@@ -259,11 +276,11 @@ async function initSession(username, room) {
 
   session.onunreceiver = (receiver) => {
     console.log('onunreceiver');
-    
+
 
     const stream = streams.get(receiver.tokenId);
     stream.removeTrack(stream.getTrackById(receiver.receiverId));
-    if(stream.getTracks().length === 0){
+    if (stream.getTracks().length === 0) {
       $(`#videoBox-${receiver.tokenId}`).remove();
       streams.delete(receiver.tokenId);
     }
@@ -362,6 +379,8 @@ async function loginEnter(event) {
     } else {
       room = $('#roomInput').value;
     }
+
+    $('#myName').innerText = username;
 
     await animation();
     await initSession(username, room);
