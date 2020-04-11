@@ -207,7 +207,7 @@ function generateParticipantRow(tokenId, username) {
 
 //webrtc part
 async function initSession(username, room) {
-  const signalServer = `ws://127.0.0.1:8800`;
+  const signalServer = `wss://127.0.0.1:8800`;
 
   const tokenId = randomId(10);
   session = new Dugon.Session(signalServer, room, tokenId, {
