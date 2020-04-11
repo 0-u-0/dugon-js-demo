@@ -270,8 +270,8 @@ async function initSession(username, room) {
     }
   }
 
-  session.onreceiver = (receiver, tokenId, producerId, metadata) => {
-    session.subscribe(receiver);
+  session.onreceiver = (receiver, tokenId, senderId, metadata) => {
+    session.subscribe(receiver.senderId);
   };
 
   session.onunreceiver = (receiver) => {
