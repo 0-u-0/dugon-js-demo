@@ -804,7 +804,7 @@
 	    this.direction = direction;
 	  }
 
-	  generate(isActive, mid, setup, fingerprint, iceUfrag, icePwd, candidates) {
+	  generate(isActive, mid, setup, iceUfrag, icePwd, candidates) {
 	    const template = {};
 
 	    //audio
@@ -951,14 +951,19 @@
 	    if (isActive) {
 	      template['direction'] = this.direction;
 	      template['ext'] = ext;
+	      template['port'] = 7;
 
 	    } else {
+	      if(mid != '0'){
+	        template['port'] = 0;
+	      }else{
+	        template['port'] = 7;
+	      }
 	      template['direction'] = 'inactive';
 	    }
 
 
 	    //static
-	    template['port'] = 7;
 	    template['protocol'] = "UDP/TLS/RTP/SAVPF";
 	    template['connection'] = {
 	      "version": 4,
@@ -976,7 +981,6 @@
 	    //instant
 	    template['setup'] = setup;
 	    template['mid'] = mid;
-	    template["fingerprint"] = fingerprint;
 	    template["iceUfrag"] = iceUfrag;
 	    template["icePwd"] = icePwd;
 	    template["candidates"] = candidates;
@@ -986,7 +990,7 @@
 	}
 
 
-	function remoteSdpGen(senders, remoteICECandidates, remoteICEParameters, remoteDTLSParameters) {
+	function pubRemoteSdpGen(senders, remoteICECandidates, remoteICEParameters, remoteDTLSParameters) {
 	  const sdpTemplate = {
 	    "version": 0,
 	    "origin": {
@@ -1008,10 +1012,19 @@
 	    },
 	    "icelite": "ice-lite",//FIXME: 
 	    "groups": [],//BUNDLE
-	    "media": [] //medias
+	    "media": [], //medias
+	    "fingerprint": {},
 	  };
 
-	  let remoteSdpObj = Object.assign({},sdpTemplate);
+	  let remoteSdpObj = Object.assign({}, sdpTemplate);
+
+	  const fingerprint = {
+	    "type": remoteDTLSParameters.fingerprint.algorithm,
+	    "hash": remoteDTLSParameters.fingerprint.value
+	  };
+
+	  remoteSdpObj.fingerprint = fingerprint;
+
 
 	  let medias = [];
 	  let mids = [];
@@ -1041,13 +1054,9 @@
 	        }
 	      }
 
-	      const fingerprint = {
-	        "type": remoteDTLSParameters.fingerprint.algorithm,
-	        "hash": remoteDTLSParameters.fingerprint.value
-	      };
 
-	      let media = trackSdp.generate(sender.available, sender.mid, remoteDTLSParameters.setup,
-	        fingerprint, remoteICEParameters.usernameFragment,
+
+	      let media = trackSdp.generate(sender.available, sender.mid, remoteDTLSParameters.setup, remoteICEParameters.usernameFragment,
 	        remoteICEParameters.password, remoteICECandidates);
 	      medias.push(media);
 	    }
@@ -1068,6 +1077,243 @@
 	    sdp: lib.write(remoteSdpObj)
 	  });
 
+	  return remoteSdp;
+	}
+
+	//TODO: dtx ssrc, group ssrc
+	function subRemoteSdpGen(receivers, remoteICECandidates, remoteICEParameters, remoteDTLSParameters) {
+
+	  const sdpTemplate = {
+	    "version": 0,
+	    "origin": {
+	      "username": "mediasoup-client",
+	      "sessionId": 10000,
+	      "sessionVersion": 1,
+	      "netType": "IN",
+	      "ipVer": 4,
+	      "address": "0.0.0.0"
+	    },
+	    "name": "-",
+	    "timing": {
+	      "start": 0,
+	      "stop": 0
+	    },
+	    "icelite": "ice-lite",
+	    "fingerprint": {},
+	    "msidSemantic": {
+	      "semantic": "WMS",
+	      "token": "*"
+	    },
+	    "groups": [
+	      {
+	        "type": "BUNDLE",
+	        "mids": 0
+	      }
+	    ],
+	    "media": []
+	  };
+
+	  const audioExt = [
+	    {
+	      "value": 4,
+	      "uri": "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"
+	    },
+	    {
+	      "value": 10,
+	      "uri": "urn:ietf:params:rtp-hdrext:ssrc-audio-level"
+	    }
+	  ];
+
+	  const audioTemplate = {
+	    "rtp": [
+	      {
+	        "payload": 100,
+	        "codec": "opus",
+	        "rate": 48000,
+	        "encoding": 2
+	      }
+	    ],
+	    "fmtp": [
+	      {
+	        "payload": 100,
+	        "config": "minptime=10;useinbandfec=1;sprop-stereo=1;usedtx=1"
+	      }
+	    ],
+	    "type": "audio",
+	    "port": 7,
+	    "protocol": "UDP/TLS/RTP/SAVPF",
+	    "payloads": 100,
+	    "connection": {
+	      "version": 4,
+	      "ip": "127.0.0.1"
+	    },
+	    "setup": "actpass",
+	    "mid": 0,
+	    "msid": "",
+	    "direction": "",
+	    "iceUfrag": "",
+	    "icePwd": "",
+	    "candidates": [],
+	    "endOfCandidates": "end-of-candidates",
+	    "iceOptions": "renomination",
+	    "ssrcs": [],
+	    "rtcpMux": "rtcp-mux",
+	    "rtcpRsize": "rtcp-rsize"
+	  };
+
+	  const videoExt = [
+	    {
+	      "value": 4,
+	      "uri": "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"
+	    },
+	    {
+	      "value": 5,
+	      "uri": "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"
+	    },
+	    {
+	      "value": 6,
+	      "uri": "http://tools.ietf.org/html/draft-ietf-avtext-framemarking-07"
+	    },
+	    {
+	      "value": 11,
+	      "uri": "urn:3gpp:video-orientation"
+	    },
+	    {
+	      "value": 12,
+	      "uri": "urn:ietf:params:rtp-hdrext:toffset"
+	    }
+	  ];
+
+	  const videoTemplate = {
+	    "rtp": [
+	      {
+	        "payload": 101,
+	        "codec": "VP8",
+	        "rate": 90000
+	      },
+	      {
+	        "payload": 102,
+	        "codec": "rtx",
+	        "rate": 90000
+	      }
+	    ],
+	    "fmtp": [
+	      {
+	        "payload": 102,
+	        "config": "apt=101"
+	      }
+	    ],
+	    "type": "video",
+	    "port": 7,
+	    "protocol": "UDP/TLS/RTP/SAVPF",
+	    "payloads": "101 102",
+	    "connection": {
+	      "version": 4,
+	      "ip": "127.0.0.1"
+	    },
+	    "rtcpFb": [
+	      {
+	        "payload": 101,
+	        "type": "transport-cc",
+	        "subtype": ""
+	      },
+	      {
+	        "payload": 101,
+	        "type": "ccm",
+	        "subtype": "fir"
+	      },
+	      {
+	        "payload": 101,
+	        "type": "nack",
+	        "subtype": ""
+	      },
+	      {
+	        "payload": 101,
+	        "type": "nack",
+	        "subtype": "pli"
+	      }
+	    ],
+	    "setup": "actpass",
+	    "mid": 1,
+	    "msid": "",
+	    "direction": "",
+	    "iceUfrag": "",
+	    "icePwd": "",
+	    "candidates": [],
+	    "endOfCandidates": "end-of-candidates",
+	    "iceOptions": "renomination",
+	    "ssrcs": [],
+	    "ssrcGroups": [],
+	    "rtcpMux": "rtcp-mux",
+	    "rtcpRsize": "rtcp-rsize"
+	  };
+
+	  const remoteSdpObj = Object.assign({}, sdpTemplate);
+
+	  remoteSdpObj.fingerprint = {
+	    "type": remoteDTLSParameters.fingerprint.algorithm,
+	    "hash": remoteDTLSParameters.fingerprint.value
+	  };
+
+	  let medias = [];
+	  let mids = [];
+	  for (let [key, receiver] of receivers) {
+	    // console.log(receiver);
+	    let media;
+	    if (receiver.kind === 'audio') {
+
+	      media = Object.assign({}, audioTemplate);
+	      if (receiver.active) {
+	        media.direction = 'sendonly';
+	        media.ext = audioExt;
+	      } else {
+	        media.direction = 'inactive';
+	      }
+
+	    } else if (receiver.kind == 'video') {
+
+	      media = Object.assign({}, videoTemplate);
+
+	      if (receiver.active) {
+	        media.direction = 'sendonly';
+	        media.ext = videoExt;
+	      } else {
+	        media.direction = 'inactive';
+	      }
+	    }
+
+
+	    media.mid = String(receiver.mid);
+	    media.msid = `${receiver.rtpParameters.rtcp.cname} ${receiver.receiverId}`;
+	    media.iceUfrag = remoteICEParameters.usernameFragment;
+	    media.icePwd = remoteICEParameters.password;
+
+	    media.candidates = remoteICECandidates;
+
+	    media.ssrcs = [
+	      {
+	        "id": receiver.rtpParameters.encodings[0].ssrc,
+	        "attribute": "cname",
+	        "value": receiver.rtpParameters.rtcp.cname
+	      }
+	    ];
+
+	    medias.push(media);
+
+	    mids.push(receiver.mid);
+	  }
+
+
+	  remoteSdpObj.media = medias;
+
+	  remoteSdpObj.groups = [
+	    {
+	      "type": "BUNDLE",
+	      "mids": mids.join(" ")
+	    }
+	  ];
+
+	  let remoteSdp = lib.write(remoteSdpObj);
 	  return remoteSdp;
 	}
 
@@ -1543,7 +1789,7 @@
 
 	    this.getLocalSdpData(sender, localSdp);
 
-	    let remoteSdp = remoteSdpGen(this.senders, this.remoteICECandidates, this.remoteICEParameters, this.remoteDTLSParameters);
+	    let remoteSdp = pubRemoteSdpGen(this.senders, this.remoteICECandidates, this.remoteICEParameters, this.remoteDTLSParameters);
 
 	    await this.pc.setRemoteDescription(remoteSdp);
 
@@ -1558,25 +1804,26 @@
 
 	  }
 
-	  stopSender(sender) {
-	    this.asyncQueue.push(this, this._stopSender, sender);
+	  stopSender(senderId) {
+	    this.asyncQueue.push(this, this._stopSender, senderId);
 	  }
-	  async _stopSender(sender) {
+	  async _stopSender(senderId) {
 	    //TODO: check sender 
-	    if (sender && sender.senderId != 0) {
-	      this.pc.removeTrack(sender.transceiver.sender);
+	    for (let sender of this.senders) {
+	      if (sender.senderId === senderId) {
+	        this.pc.removeTrack(sender.transceiver.sender);
 
-	      let localSdp = await this.pc.createOffer();
+	        let localSdp = await this.pc.createOffer();
 
-	      let localSdpObj = lib.parse(localSdp.sdp);
-	      await this.pc.setLocalDescription(localSdp);
-	      let remoteSdp = remoteSdpGen(this.senders, this.remoteICECandidates, this.remoteICEParameters, this.remoteDTLSParameters);
-	      await this.pc.setRemoteDescription(remoteSdp);
+	        let localSdpObj = lib.parse(localSdp.sdp);
+	        await this.pc.setLocalDescription(localSdp);
+	        let remoteSdp = pubRemoteSdpGen(this.senders, this.remoteICECandidates, this.remoteICEParameters, this.remoteDTLSParameters);
+	        await this.pc.setRemoteDescription(remoteSdp);
 
-	      this.onsenderclosed(sender.senderId);
+	        this.onsenderclosed(sender.senderId);
+	      }
 	    }
 	  }
-
 	}
 
 	class Receiver {
@@ -1592,359 +1839,6 @@
 
 	    this.active = false;
 	  }
-	}
-
-	function remoteSdpGenerator(receivers, remoteICECandidates, remoteICEParameters, remoteDTLSParameters) {
-
-	  const sdpTemplate = {
-	    "version": 0,
-	    "origin": {
-	      "username": "mediasoup-client",
-	      "sessionId": 10000,
-	      "sessionVersion": 1,
-	      "netType": "IN",
-	      "ipVer": 4,
-	      "address": "0.0.0.0"
-	    },
-	    "name": "-",
-	    "timing": {
-	      "start": 0,
-	      "stop": 0
-	    },
-	    "icelite": "ice-lite",
-	    "fingerprint": {},
-	    "msidSemantic": {
-	      "semantic": "WMS",
-	      "token": "*"
-	    },
-	    "groups": [
-	      {
-	        "type": "BUNDLE",
-	        "mids": 0
-	      }
-	    ],
-	    "media": []
-	  };
-
-	  const audioTemplate = {
-	    "rtp": [
-	      {
-	        "payload": 100,
-	        "codec": "opus",
-	        "rate": 48000,
-	        "encoding": 2
-	      }
-	    ],
-	    "fmtp": [
-	      {
-	        "payload": 100,
-	        "config": "minptime=10;useinbandfec=1;sprop-stereo=1;usedtx=1"
-	      }
-	    ],
-	    "type": "audio",
-	    "port": 7,
-	    "protocol": "UDP/TLS/RTP/SAVPF",
-	    "payloads": 100,
-	    "connection": {
-	      "version": 4,
-	      "ip": "127.0.0.1"
-	    },
-	    "ext": [
-	      {
-	        "value": 4,
-	        "uri": "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"
-	      },
-	      {
-	        "value": 10,
-	        "uri": "urn:ietf:params:rtp-hdrext:ssrc-audio-level"
-	      }
-	    ],
-	    "setup": "actpass",
-	    "mid": 0,
-	    "msid": "",
-	    "direction": "sendonly",
-	    "iceUfrag": "",
-	    "icePwd": "",
-	    "candidates": [],
-	    "endOfCandidates": "end-of-candidates",
-	    "iceOptions": "renomination",
-	    "ssrcs": [],
-	    "rtcpMux": "rtcp-mux",
-	    "rtcpRsize": "rtcp-rsize"
-	  };
-
-	  const inactiveAudioTemplate = {
-	    "rtp": [
-	      {
-	        "payload": 100,
-	        "codec": "opus",
-	        "rate": 48000,
-	        "encoding": 2
-	      }
-	    ],
-	    "fmtp": [
-	      {
-	        "payload": 100,
-	        "config": "minptime=10;useinbandfec=1;sprop-stereo=1;usedtx=1"
-	      }
-	    ],
-	    "type": "audio",
-	    "port": 7,
-	    "protocol": "UDP/TLS/RTP/SAVPF",
-	    "payloads": 100,
-	    "connection": {
-	      "version": 4,
-	      "ip": "127.0.0.1"
-	    },
-	    "setup": "actpass",
-	    "mid": 0,
-	    "msid": "",
-	    "direction": "inactive",
-	    "iceUfrag": "",
-	    "icePwd": "",
-	    "candidates": [],
-	    "endOfCandidates": "end-of-candidates",
-	    "iceOptions": "renomination",
-	    "ssrcs": [],
-	    "rtcpMux": "rtcp-mux",
-	    "rtcpRsize": "rtcp-rsize"
-	  };
-
-	  const videoTemplate = {
-	    "rtp": [
-	      {
-	        "payload": 101,
-	        "codec": "VP8",
-	        "rate": 90000
-	      },
-	      {
-	        "payload": 102,
-	        "codec": "rtx",
-	        "rate": 90000
-	      }
-	    ],
-	    "fmtp": [
-	      {
-	        "payload": 102,
-	        "config": "apt=101"
-	      }
-	    ],
-	    "type": "video",
-	    "port": 7,
-	    "protocol": "UDP/TLS/RTP/SAVPF",
-	    "payloads": "101 102",
-	    "connection": {
-	      "version": 4,
-	      "ip": "127.0.0.1"
-	    },
-	    "rtcpFb": [
-	      {
-	        "payload": 101,
-	        "type": "transport-cc",
-	        "subtype": ""
-	      },
-	      {
-	        "payload": 101,
-	        "type": "ccm",
-	        "subtype": "fir"
-	      },
-	      {
-	        "payload": 101,
-	        "type": "nack",
-	        "subtype": ""
-	      },
-	      {
-	        "payload": 101,
-	        "type": "nack",
-	        "subtype": "pli"
-	      }
-	    ],
-	    "ext": [
-	      {
-	        "value": 4,
-	        "uri": "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"
-	      },
-	      {
-	        "value": 5,
-	        "uri": "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"
-	      },
-	      {
-	        "value": 6,
-	        "uri": "http://tools.ietf.org/html/draft-ietf-avtext-framemarking-07"
-	      },
-	      {
-	        "value": 11,
-	        "uri": "urn:3gpp:video-orientation"
-	      },
-	      {
-	        "value": 12,
-	        "uri": "urn:ietf:params:rtp-hdrext:toffset"
-	      }
-	    ],
-	    "setup": "actpass",
-	    "mid": 1,
-	    "msid": "",
-	    "direction": "sendonly",
-	    "iceUfrag": "",
-	    "icePwd": "",
-	    "candidates": [],
-	    "endOfCandidates": "end-of-candidates",
-	    "iceOptions": "renomination",
-	    "ssrcs": [],
-	    "ssrcGroups": [],
-	    "rtcpMux": "rtcp-mux",
-	    "rtcpRsize": "rtcp-rsize"
-	  };
-
-	  const inactiveVideoTemplate = {
-	    "rtp": [
-	      {
-	        "payload": 101,
-	        "codec": "VP8",
-	        "rate": 90000
-	      },
-	      {
-	        "payload": 102,
-	        "codec": "rtx",
-	        "rate": 90000
-	      }
-	    ],
-	    "fmtp": [
-	      {
-	        "payload": 102,
-	        "config": "apt=101"
-	      }
-	    ],
-	    "type": "video",
-	    "port": 7,
-	    "protocol": "UDP/TLS/RTP/SAVPF",
-	    "payloads": "101 102",
-	    "connection": {
-	      "version": 4,
-	      "ip": "127.0.0.1"
-	    },
-	    "rtcpFb": [
-	      {
-	        "payload": 101,
-	        "type": "transport-cc",
-	        "subtype": ""
-	      },
-	      {
-	        "payload": 101,
-	        "type": "ccm",
-	        "subtype": "fir"
-	      },
-	      {
-	        "payload": 101,
-	        "type": "nack",
-	        "subtype": ""
-	      },
-	      {
-	        "payload": 101,
-	        "type": "nack",
-	        "subtype": "pli"
-	      }
-	    ],
-	    "setup": "actpass",
-	    "mid": 1,
-	    "msid": "",
-	    "direction": "inactive",
-	    "iceUfrag": "",
-	    "icePwd": "",
-	    "candidates": [],
-	    "endOfCandidates": "end-of-candidates",
-	    "iceOptions": "renomination",
-	    "ssrcs": [],
-	    "ssrcGroups": [],
-	    "rtcpMux": "rtcp-mux",
-	    "rtcpRsize": "rtcp-rsize"
-	  };
-
-	  const remoteSdpObj = Object.assign({}, sdpTemplate);
-
-	  remoteSdpObj.fingerprint = {
-	    "type": remoteDTLSParameters.fingerprint.algorithm,
-	    "hash": remoteDTLSParameters.fingerprint.value
-	  };
-
-	  let medias = [];
-
-	  let mids = [];
-	  for (let [key, receiver] of receivers) {
-	    // console.log(receiver);
-	    if (receiver.kind === 'audio') {
-	      let media;
-
-	      if (receiver.active) {
-	        media = Object.assign({}, audioTemplate);
-	      } else {
-	        media = Object.assign({}, inactiveAudioTemplate);
-	      }
-
-	      media.mid = String(receiver.mid);
-	      media.msid = `${receiver.rtpParameters.rtcp.cname} ${receiver.receiverId}`;
-	      media.iceUfrag = remoteICEParameters.usernameFragment;
-	      media.icePwd = remoteICEParameters.password;
-
-	      for (let i in remoteICECandidates) {
-	        media.candidates.push(remoteICECandidates[i]);
-	      }
-
-	      media.ssrcs = [
-	        {
-	          "id": receiver.rtpParameters.encodings[0].ssrc,
-	          "attribute": "cname",
-	          "value": receiver.rtpParameters.rtcp.cname
-	        }
-	      ];
-	      medias.push(media);
-	    } else if (receiver.kind == 'video') {
-
-	      let media;
-	      if (receiver.active) {
-	        media = Object.assign({}, videoTemplate);
-	      } else {
-	        media = Object.assign({}, inactiveVideoTemplate);
-
-	      }
-	      console.log(receiver.mid);
-	      media.mid = String(receiver.mid);
-	      media.msid = `${receiver.rtpParameters.rtcp.cname} ${receiver.receiverId}`;
-	      media.iceUfrag = remoteICEParameters.usernameFragment;
-	      media.icePwd = remoteICEParameters.password;
-
-	      for (let i in remoteICECandidates) {
-	        media.candidates.push(remoteICECandidates[i]);
-	      }
-
-	      media.ssrcs = [
-	        {
-	          "id": receiver.rtpParameters.encodings[0].ssrc,
-	          "attribute": "cname",
-	          "value": receiver.rtpParameters.rtcp.cname
-	        }
-	      ];
-	      medias.push(media);
-	    }
-
-	    mids.push(receiver.mid);
-	  }
-
-
-	  remoteSdpObj.media = medias;
-
-	  remoteSdpObj.groups = [
-	    {
-	      "type": "BUNDLE",
-	      "mids": mids.join(" ")
-	    }
-	  ];
-
-	  let remoteSdp = lib.write(remoteSdpObj);
-
-	  console.log(remoteSdp);
-
-	  return remoteSdp;
 	}
 
 	class Subscriber extends Transport {
@@ -1966,7 +1860,7 @@
 	  removeReceiverByTokenId(tokenId) {
 	    for (let [_, receiver] of this.receivers) {
 	      if (tokenId === receiver.tokenId) {
-	        this.removeReceiver(receiver);
+	        this.removeReceiver(receiver.senderId);
 	      }
 	    }
 	  }
@@ -1978,8 +1872,11 @@
 	    return receiver;
 	  }
 
-	  receive(receiver) {
-	    this.asyncQueue.push(this, this._receive, receiver);
+	  receive(senderId) {
+	    const receiver = this.receivers.get(senderId);
+	    if (receiver) {
+	      this.asyncQueue.push(this, this._receive, receiver);
+	    }
 	  }
 
 	  async _receive(receiver) {
@@ -1987,7 +1884,7 @@
 	      receiver.active = true;
 	    }
 
-	    let remoteSdp = remoteSdpGenerator(this.receivers, this.remoteICECandidates,
+	    let remoteSdp = subRemoteSdpGen(this.receivers, this.remoteICECandidates,
 	      this.remoteICEParameters, this.remoteDTLSParameters);
 
 	    await this.pc.setRemoteDescription(new RTCSessionDescription({
@@ -2015,14 +1912,17 @@
 
 	  }
 
-	  removeReceiver(receiver) {
-	    this.asyncQueue.push(this, this._removeReceiver, receiver);
+	  removeReceiver(senderId) {
+	    const receiver = this.receivers.get(senderId);
+	    if (receiver && receiver.active) {
+	      this.asyncQueue.push(this, this._removeReceiver, receiver);
+	    }
 	  }
 
 	  async _removeReceiver(receiver) {
 	    receiver.active = false;
 
-	    let remoteSdp = remoteSdpGenerator(this.receivers, this.remoteICECandidates,
+	    let remoteSdp = subRemoteSdpGen(this.receivers, this.remoteICECandidates,
 	      this.remoteICEParameters, this.remoteDTLSParameters);
 
 	    await this.pc.setRemoteDescription(new RTCSessionDescription({
@@ -2163,6 +2063,13 @@
 
 	      this.subscriber.onremovereceiver = receiver => {
 	        this.onunreceiver(receiver);
+	        this.socket.request({
+	          event: 'unsubscribe',
+	          data: {
+	            transportId: this.subscriber.id,
+	            senderId: receiver.senderId,
+	          }
+	        });
 	      };
 
 	      this.subscriber.init();
@@ -2183,29 +2090,23 @@
 	    }
 	  }
 
-	  async unpublish(sender) {
-	    this.publisher.stopSender(sender);
+	  async unpublish(senderId) {
+	    this.publisher.stopSender(senderId);
 	  }
 
-	  async subscribe(receiver) {
-	    this.subscriber.receive(receiver);
+	  async subscribe(senderId) {
+	    this.subscriber.receive(senderId);
 	  }
 
-	  async unsubscribe(receiver) {
-	    if (receiver.active) {
-	      this.subscriber.removeReceiver(receiver);
-	      await this.socket.request({
-	        event: 'unsubscribe',
-	        data: {
-	          transportId: this.subscriber.id,
-	          senderId: receiver.senderId,
-	        }
-	      });
+	  async unsubscribe(senderId) {
+	    this.subscriber.removeReceiver(senderId);
+	  }
+
+	  async pause(senderId) {
+	    let transportId = null;
+	    if(this.subscriber.receivers.get(senderId)){
+	      transportId = this.subscriber.transportId;
 	    }
-	  }
-
-	  async pause() {
-
 	  }
 
 	  async resume() {
@@ -2236,11 +2137,7 @@
 	        break;
 	      }      case 'unpublish': {
 	        let { senderId, tokenId } = data;
-	        let receiver = this.subscriber.receivers.get(senderId);
-
-	        if (receiver.active) {
-	          this.subscriber.removeReceiver(receiver);
-	        }
+	        this.subscriber.removeReceiver(senderId);
 
 	        break;
 	      }
