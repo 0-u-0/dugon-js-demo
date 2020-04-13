@@ -954,9 +954,9 @@
 	      template['port'] = 7;
 
 	    } else {
-	      if(mid != '0'){
+	      if (mid != '0') {
 	        template['port'] = 0;
-	      }else{
+	      } else {
 	        template['port'] = 7;
 	      }
 	      template['direction'] = 'inactive';
@@ -1115,6 +1115,11 @@
 
 	  const audioExt = [
 	    {
+	      "value": 1,
+	      "uri": "urn:ietf:params:rtp-hdrext:sdes:mid"
+	    },
+
+	    {
 	      "value": 4,
 	      "uri": "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"
 	    },
@@ -1162,6 +1167,10 @@
 	  };
 
 	  const videoExt = [
+	    {
+	      "value": 1,
+	      "uri": "urn:ietf:params:rtp-hdrext:sdes:mid"
+	    },
 	    {
 	      "value": 4,
 	      "uri": "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"
@@ -1298,9 +1307,120 @@
 	      }
 	    ];
 
+	    if (receiver.kind === 'video') {
+	      media.ssrcs.push({
+	        "id": receiver.rtpParameters.encodings[0].rtx.ssrc,
+	        "attribute": "cname",
+	        "value": receiver.rtpParameters.rtcp.cname
+	      });
+
+	      media.ssrcGroups = [
+	        {
+	          "semantics": "FID",
+	          "ssrcs": `${receiver.rtpParameters.encodings[0].ssrc} ${receiver.rtpParameters.encodings[0].rtx.ssrc}`
+	        }
+	      ];
+	    }
+
 	    medias.push(media);
 
 	    mids.push(receiver.mid);
+
+	    // if (receiver.kind === 'video') {
+	    //   const probatorSdp = {
+	    //     "rtp": [
+	    //       {
+	    //         "payload": 127,
+	    //         "codec": "VP8",
+	    //         "rate": 90000
+	    //       }
+	    //     ],
+	    //     "fmtp": [],
+	    //     "type": "video",
+	    //     "port": 7,
+	    //     "protocol": "UDP/TLS/RTP/SAVPF",
+	    //     "payloads": 127,
+	    //     "connection": {
+	    //       "version": 4,
+	    //       "ip": "127.0.0.1"
+	    //     },
+	    //     "rtcpFb": [
+	    //       {
+	    //         "payload": 127,
+	    //         "type": "transport-cc",
+	    //         "subtype": ""
+	    //       },
+	    //       {
+	    //         "payload": 127,
+	    //         "type": "ccm",
+	    //         "subtype": "fir"
+	    //       },
+	    //       {
+	    //         "payload": 127,
+	    //         "type": "nack",
+	    //         "subtype": ""
+	    //       },
+	    //       {
+	    //         "payload": 127,
+	    //         "type": "nack",
+	    //         "subtype": "pli"
+	    //       }
+	    //     ],
+	    //     "ext": [
+	    //       {
+	    //         "value": 1,
+	    //         "uri": "urn:ietf:params:rtp-hdrext:sdes:mid"
+	    //       },
+	    //       {
+	    //         "value": 4,
+	    //         "uri": "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time"
+	    //       },
+	    //       {
+	    //         "value": 5,
+	    //         "uri": "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"
+	    //       },
+	    //       {
+	    //         "value": 6,
+	    //         "uri": "http://tools.ietf.org/html/draft-ietf-avtext-framemarking-07"
+	    //       },
+	    //       {
+	    //         "value": 11,
+	    //         "uri": "urn:3gpp:video-orientation"
+	    //       },
+	    //       {
+	    //         "value": 12,
+	    //         "uri": "urn:ietf:params:rtp-hdrext:toffset"
+	    //       }
+	    //     ],
+	    //     "setup": "actpass",
+	    //     "mid": "probator",
+	    //     "msid": "probator probator",
+	    //     "direction": "sendonly",
+	    //     "iceUfrag": "",//TODO:
+	    //     "icePwd": "",//TODO:
+	    //     "candidates": [],//TODO:
+	    //     "endOfCandidates": "end-of-candidates",
+	    //     "iceOptions": "renomination",
+	    //     "ssrcs": [
+	    //       {
+	    //         "id": 1234,
+	    //         "attribute": "cname",
+	    //         "value": "probator"
+	    //       }
+	    //     ],
+	    //     "rtcpMux": "rtcp-mux",
+	    //     "rtcpRsize": "rtcp-rsize"
+	    //   };
+
+
+	    //   probatorSdp.iceUfrag = remoteICEParameters.usernameFragment;
+	    //   probatorSdp.icePwd = remoteICEParameters.password;  
+	    //   probatorSdp.candidates = remoteICECandidates;
+
+	    //   medias.push(probatorSdp);
+	    //   mids.push('probator');
+	    // }
+
 	  }
 
 
