@@ -1,7 +1,7 @@
-const signalServer = `wss://127.0.0.1:8800`;
+const signalServer = `ws://127.0.0.1:8800`;
 //var
-let videoTrack = null;
-let audioTrack = null;
+let videoSource = null;
+let audioSource = null;
 let session = null;
 let streams = new Map();
 
@@ -210,11 +210,7 @@ function generateParticipantRow(tokenId, username) {
 async function initSession(username, room) {
 
   const tokenId = randomId(10);
-  session = new Dugon.Session(signalServer, room, tokenId, {
-    metadata: {
-      username
-    }
-  });
+  session = new Dugon.createSession(signalServer, room, tokenId, { username });
 
   session.onin = (tokenId, metadata) => {
     console.log(tokenId, ' in');
@@ -239,21 +235,25 @@ async function initSession(username, room) {
 
   };
 
-  session.onsender = sender => {
-    // session.unpublish(sender);
-    // if (sender.id == videoTrack.id) {
-    //   session.unpublish(sender);
-    // }
+  session.onsender = (senderId, remoteTokenId, metadata) => {
+    // console.log(sender.id);
+    if (remoteTokenId != tokenId) {
+      session.subscribe(senderId);
+    }
+  };
+
+  session.onchange = (receiver, isPaused) => {
+    console.log(`receiver ${receiver.id} isPaused ${isPaused}`);
   };
 
 
-  session.ontrack = (track, receiver) => {
+  session.onmedia = (media, receiver) => {
     console.log('ontrack');
 
     const stream = streams.get(receiver.tokenId);
     console.log(stream);
     if ($(`#videoBox-${receiver.tokenId}`)) {
-      stream.addTrack(track);
+      stream.addTrack(media.track);
     } else {
       const videoBox = document.createElement('div');
       videoBox.id = `videoBox-${receiver.tokenId}`;
@@ -262,7 +262,7 @@ async function initSession(username, room) {
       const newVideo = document.createElement('video');
       newVideo.autoplay = true;
 
-      stream.addTrack(track);
+      stream.addTrack(media.track);
       newVideo.srcObject = stream;
       videoBox.append(newVideo);
 
@@ -270,11 +270,8 @@ async function initSession(username, room) {
     }
   }
 
-  session.onreceiver = (receiver, tokenId, senderId, metadata) => {
-    session.subscribe(receiver.senderId);
-  };
 
-  session.onunreceiver = (receiver) => {
+  session.onunsubscribed = (receiver) => {
     console.log('onunreceiver');
 
 
@@ -286,14 +283,14 @@ async function initSession(username, room) {
     }
   };
 
-  await session.init({ pub: true, sub: true });
+  await session.connect({ pub: true, sub: true });
 
-  if (audioTrack) {
-    session.publish(audioTrack);
+  if (audioSource) {
+    session.publish(audioSource);
   }
 
-  if (videoTrack) {
-    session.publish(videoTrack);
+  if (videoSource) {
+    session.publish(videoSource);
   }
 }
 
@@ -424,12 +421,11 @@ window.onload = async _ => {
   //TODO: add devices selector and resolution selector
   if (video || audio) {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: video, audio: audio });
       if (video) {
-        [videoTrack] = stream.getVideoTracks();
+        videoSource = await Dugon.createVideoSource();
       }
       if (audio) {
-        [audioTrack] = stream.getAudioTracks();
+        audioSource = await Dugon.createAudioSource();
       }
       $('#localVideo').srcObject = stream;
     } catch (e) {
