@@ -4,6 +4,7 @@ let videoSource = null;
 let audioSource = null;
 let session = null;
 let streams = new Map();
+let localStream = new MediaStream();
 
 //utils
 const $ = document.querySelector.bind(document);
@@ -210,7 +211,7 @@ function generateParticipantRow(tokenId, username) {
 async function initSession(username, room) {
 
   const tokenId = randomId(10);
-  session = new Dugon.createSession(signalServer, room, tokenId, { username });
+  session = Dugon.createSession(signalServer, room, tokenId, { username });
 
   session.onin = (tokenId, metadata) => {
     console.log(tokenId, ' in');
@@ -276,7 +277,7 @@ async function initSession(username, room) {
 
 
     const stream = streams.get(receiver.tokenId);
-    stream.removeTrack(stream.getTrackById(receiver.receiverId));
+    stream.removeTrack(stream.getTrackById(receiver.id));
     if (stream.getTracks().length === 0) {
       $(`#videoBox-${receiver.tokenId}`).remove();
       streams.delete(receiver.tokenId);
@@ -423,12 +424,15 @@ window.onload = async _ => {
     try {
       if (video) {
         videoSource = await Dugon.createVideoSource();
+        localStream.addTrack(videoSource.track);
       }
       if (audio) {
         audioSource = await Dugon.createAudioSource();
+        localStream.addTrack(audioSource.track);
       }
-      $('#localVideo').srcObject = stream;
+      $('#localVideo').srcObject = localStream;
     } catch (e) {
+      console.log(e);
       alert('Local devices was banned.Check your Chrome Settings.');
     }
   }
