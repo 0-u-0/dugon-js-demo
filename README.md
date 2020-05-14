@@ -1,4 +1,4 @@
-# dugon-js-demo
+# Dugon web demo
 
 ## Run
 
