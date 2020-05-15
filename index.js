@@ -214,17 +214,22 @@ function generateParticipantRow(tokenId, username) {
 function mediaChange(obj) {
   const { id, media, enable, local } = obj.dataset;
 
+  console.log(obj.dataset);
   if (enable === 'true') {
+    session.pause(id);
+
     if (media === 'video') {
-      obj.src = 'images/nowebcam.png'
+      obj.src = 'images/nowebcam.png';
     } else {
-      obj.src = 'images/nomic.png'
+      obj.src = 'images/nomic.png';
     }
   } else {
+    session.resume(id);
+
     if (media === 'video') {
-      obj.src = 'images/webcam.png'
+      obj.src = 'images/webcam.png';
     } else {
-      obj.src = 'images/mic.png'
+      obj.src = 'images/mic.png';
     }
   }
 
@@ -262,7 +267,23 @@ async function initSession(username, room) {
 
   session.onsender = (senderId, remoteTokenId, metadata) => {
     // console.log(sender.id);
-    if (remoteTokenId != tokenId) {
+    if (remoteTokenId == tokenId) {
+      console.log('local', senderId, metadata);
+      const { name } = metadata;
+      let id;
+      if (name === 'audio') {
+        $('#localAudioSwitch').disabled = false;
+        $('#localAudioSwitch').src = "images/mic.png";
+        $('#localAudioSwitch').dataset.enable = true;
+        $('#localAudioSwitch').dataset.id = senderId;
+      } else {
+        $('#localVideoSwitch').disabled = false;
+        $('#localVideoSwitch').src = "images/webcam.png";
+        $('#localVideoSwitch').dataset.enable = true;
+        $('#localVideoSwitch').dataset.id = senderId;
+      }
+
+    } else {
       session.subscribe(senderId);
     }
   };
@@ -276,7 +297,6 @@ async function initSession(username, room) {
     console.log('ontrack');
 
     const stream = streams.get(receiver.tokenId);
-    console.log(stream);
     if ($(`#videoBox-${receiver.tokenId}`)) {
       stream.addTrack(media.track);
     } else {
@@ -311,11 +331,11 @@ async function initSession(username, room) {
   await session.connect({ pub: true, sub: true });
 
   if (audioSource) {
-    session.publish(audioSource);
+    session.publish(audioSource, { metadata: { name: 'audio' } });
   }
 
   if (videoSource) {
-    session.publish(videoSource);
+    session.publish(videoSource, { metadata: { name: 'video' } });
   }
 }
 
