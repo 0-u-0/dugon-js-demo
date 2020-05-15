@@ -194,6 +194,7 @@ function blocker(secodes) {
 }
 
 
+//TODO(CC): add sender pause
 function generateParticipantRow(tokenId, username) {
   const participantRow = document.createElement('div');
   participantRow.classList.add('participantRow');
@@ -201,10 +202,33 @@ function generateParticipantRow(tokenId, username) {
   participantRow.innerHTML = `
   <img src="images/participant.png"><span class="labelText">${username} </span>
   <span class="imagesBox">
-    <img src="images/webcam.png"><img src="images/mic.png">
+    <input type="image" src="images/nowebcam.png" data-media="video" data-enable=false data-local=false
+      onclick="mediaChange(this)" disabled=true>
+    <input type="image" src="images/nomic.png" data-media="audio" data-enable=false data-local=false
+      onclick="mediaChange(this)" disabled=true>
   </span>`;
 
   $('#participantList').append(participantRow);
+}
+
+function mediaChange(obj) {
+  const { id, media, enable, local } = obj.dataset;
+
+  if (enable === 'true') {
+    if (media === 'video') {
+      obj.src = 'images/nowebcam.png'
+    } else {
+      obj.src = 'images/nomic.png'
+    }
+  } else {
+    if (media === 'video') {
+      obj.src = 'images/webcam.png'
+    } else {
+      obj.src = 'images/mic.png'
+    }
+  }
+
+  obj.dataset.enable = !(enable === 'true');
 }
 
 //webrtc part

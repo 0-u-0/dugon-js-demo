@@ -185,8 +185,8 @@ body,
   text-align: left;
 }
 
-.imagesBox img{
-  margin-left: 10px;
+.imagesBox input{
+  margin-left: 5px;
 }
 
 img {

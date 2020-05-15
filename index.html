@@ -10,8 +10,9 @@
 
 <body>
   <!-- github  -->
-  <a href="https://github.com/0-u-0" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80"
-      viewBox="0 0 250 250" style="opacity: 0.8; z-index: 10; fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;"
+  <a href="https://github.com/0-u-0" class="github-corner" aria-label="View source on GitHub"><svg width="80"
+      height="80" viewBox="0 0 250 250"
+      style="opacity: 0.8; z-index: 10; fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;"
       aria-hidden="true">
       <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
       <path
@@ -55,7 +56,7 @@
     }
   </style>
   <!-- github  -->
-  
+
   <div id="app">
     <div id="maskLayer">
       <div id="loginBox">
@@ -74,7 +75,10 @@
           <div class="textVertical">
             <img src="images/user.png"><span class="labelText" id="myName"></span>
             <span class="imagesBox">
-              <img src="images/webcam.png"><img src="images/mic.png">
+              <input type="image" src="images/nowebcam.png" data-media="video" data-enable=false data-local=true
+                onclick="mediaChange(this)" disabled=true>
+              <input type="image" src="images/nomic.png" data-media="audio" data-enable=false data-local="true"
+                onclick="mediaChange(this)" disabled=true>
             </span>
 
           </div>
