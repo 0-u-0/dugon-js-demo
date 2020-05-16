@@ -1,4 +1,4 @@
-const signalServer = `ws://127.0.0.1:8800`;
+const signalServer = `wss://dugon.one:8800`;
 //var
 let videoSource = null;
 let audioSource = null;
@@ -377,12 +377,12 @@ async function initSession(username, room) {
     } else {
       const videoBox = document.createElement('div');
       videoBox.id = `videoBox-${receiver.tokenId}`;
-      videoBox.setAttribute('poster', 'images/loading.gif');
 
       videoBox.classList.add('videoBox');
 
       const newVideo = document.createElement('video');
       newVideo.autoplay = true;
+      newVideo.setAttribute('poster', 'images/loading.gif');
 
       stream.addTrack(media.track);
       newVideo.srcObject = stream;
