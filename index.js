@@ -289,7 +289,29 @@ async function initSession(username, room) {
   };
 
   session.onchange = (receiver, isPaused) => {
-    console.log(`receiver ${receiver.id} isPaused ${isPaused}`);
+
+    if (receiver.metadata.name === 'video') {
+      const videoBox = $(`#videoBox-${receiver.tokenId}`);
+      if (isPaused) {
+        for (let i = 0; i < videoBox.children.length; i++) { 
+          const c = videoBox.children[i];
+          if(c.tagName === 'VIDEO'){
+            c.style.display = 'none';
+            break;
+          }
+        }
+        videoBox.insertAdjacentHTML('afterbegin', `<img src="images/novideo.png">`);
+      }else{
+        for (let i = 0; i < videoBox.children.length; i++) { 
+          const c = videoBox.children[i];
+          if(c.tagName === 'VIDEO'){
+            c.style.display = '';
+          }else if(c.tagName === 'IMG'){
+            c.remove();
+          }
+        }
+      }
+    }
   };
 
 
