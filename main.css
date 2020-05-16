@@ -41,14 +41,13 @@ body,
   left: 5%;
   width: 250px;
   height: var(--list-height);
-  overflow-y: auto;
 
   padding-left: 10px;
   padding-right: 10px;
 
   border: 1px #eeeeee solid;
   background-color: rgba(255,255,255,0.5);
-
+  overflow: hidden; 
 }
 
 .item{
