@@ -1,4 +1,4 @@
-const signalServer = `wss://dugon.one:8800`;
+const signalServer = `ws://127.0.0.1:8800`;
 //var
 let videoSource = null;
 let audioSource = null;
