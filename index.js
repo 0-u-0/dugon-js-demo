@@ -377,6 +377,8 @@ async function initSession(username, room) {
     } else {
       const videoBox = document.createElement('div');
       videoBox.id = `videoBox-${receiver.tokenId}`;
+      videoBox.setAttribute('poster', 'images/loading.gif');
+
       videoBox.classList.add('videoBox');
 
       const newVideo = document.createElement('video');
