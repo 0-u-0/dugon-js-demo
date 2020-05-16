@@ -236,6 +236,28 @@ function mediaChange(obj) {
   obj.dataset.enable = !(enable === 'true');
 }
 
+
+function addCover(videoBox){
+  for (let i = 0; i < videoBox.children.length; i++) { 
+    const c = videoBox.children[i];
+    if(c.tagName === 'VIDEO'){
+      c.style.display = 'none';
+      break;
+    }
+  }
+  videoBox.insertAdjacentHTML('afterbegin', `<img src="images/novideo.png">`);
+}
+
+function removeCover(videoBox){
+  for (let i = 0; i < videoBox.children.length; i++) { 
+    const c = videoBox.children[i];
+    if(c.tagName === 'VIDEO'){
+      c.style.display = '';
+    }else if(c.tagName === 'IMG'){
+      c.remove();
+    }
+  }
+}
 //webrtc part
 async function initSession(username, room) {
 
@@ -293,23 +315,9 @@ async function initSession(username, room) {
     if (receiver.metadata.name === 'video') {
       const videoBox = $(`#videoBox-${receiver.tokenId}`);
       if (isPaused) {
-        for (let i = 0; i < videoBox.children.length; i++) { 
-          const c = videoBox.children[i];
-          if(c.tagName === 'VIDEO'){
-            c.style.display = 'none';
-            break;
-          }
-        }
-        videoBox.insertAdjacentHTML('afterbegin', `<img src="images/novideo.png">`);
+        addCover(videoBox);
       }else{
-        for (let i = 0; i < videoBox.children.length; i++) { 
-          const c = videoBox.children[i];
-          if(c.tagName === 'VIDEO'){
-            c.style.display = '';
-          }else if(c.tagName === 'IMG'){
-            c.remove();
-          }
-        }
+        removeCover(videoBox);
       }
     }
   };
@@ -334,6 +342,11 @@ async function initSession(username, room) {
       videoBox.append(newVideo);
 
       $('#videoList').append(videoBox);
+    }
+
+    if(media.kind === 'video' && receiver.senderPaused){
+      const videoBox  = $(`#videoBox-${receiver.tokenId}`);
+      addCover(videoBox);
     }
   }
 
