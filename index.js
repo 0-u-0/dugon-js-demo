@@ -202,9 +202,9 @@ function generateParticipantRow(tokenId, username) {
   participantRow.innerHTML = `
   <img src="images/participant.png"><span class="labelText">${username} </span>
   <span class="imagesBox">
-    <input type="image" src="images/nowebcam.png" data-media="video" data-enable=false data-local=false
+    <input id="videoSwitch-${tokenId}" type="image" src="images/nowebcam.png" data-media="video" data-enable=false data-local=false
       onclick="mediaChange(this)" disabled=true>
-    <input type="image" src="images/nomic.png" data-media="audio" data-enable=false data-local=false
+    <input id="audioSwitch-${tokenId}" type="image" src="images/nomic.png" data-media="audio" data-enable=false data-local=false
       onclick="mediaChange(this)" disabled=true>
   </span>`;
 
@@ -220,6 +220,10 @@ function mediaChange(obj) {
 
     if (media === 'video') {
       obj.src = 'images/nowebcam.png';
+
+      if (local === 'false') {
+        addCover($(`#${obj.id.replace('videoSwitch', 'videoBox')}`));
+      }
     } else {
       obj.src = 'images/nomic.png';
     }
@@ -228,6 +232,10 @@ function mediaChange(obj) {
 
     if (media === 'video') {
       obj.src = 'images/webcam.png';
+
+      if (local === 'false') {
+        removeCover($(`#${obj.id.replace('videoSwitch', 'videoBox')}`));
+      }
     } else {
       obj.src = 'images/mic.png';
     }
@@ -237,10 +245,10 @@ function mediaChange(obj) {
 }
 
 
-function addCover(videoBox){
-  for (let i = 0; i < videoBox.children.length; i++) { 
+function addCover(videoBox) {
+  for (let i = 0; i < videoBox.children.length; i++) {
     const c = videoBox.children[i];
-    if(c.tagName === 'VIDEO'){
+    if (c.tagName === 'VIDEO') {
       c.style.display = 'none';
       break;
     }
@@ -248,17 +256,17 @@ function addCover(videoBox){
   videoBox.insertAdjacentHTML('afterbegin', `<img src="images/novideo.png">`);
 }
 
-function removeCover(videoBox){
-  for (let i = 0; i < videoBox.children.length; i++) { 
+function removeCover(videoBox) {
+  for (let i = 0; i < videoBox.children.length; i++) {
     const c = videoBox.children[i];
-    if(c.tagName === 'VIDEO'){
+    if (c.tagName === 'VIDEO') {
       c.style.display = '';
-    }else if(c.tagName === 'IMG'){
+    } else if (c.tagName === 'IMG') {
       c.remove();
     }
   }
 }
-//webrtc part
+//sdk part
 async function initSession(username, room) {
 
   const tokenId = randomId(10);
@@ -309,22 +317,59 @@ async function initSession(username, room) {
       session.subscribe(senderId);
     }
   };
-
+  // remote sender state changed
   session.onchange = (receiver, isPaused) => {
 
     if (receiver.metadata.name === 'video') {
       const videoBox = $(`#videoBox-${receiver.tokenId}`);
+
+      const videoSwitch = $(`#videoSwitch-${receiver.tokenId}`);
+
       if (isPaused) {
-        addCover(videoBox);
-      }else{
-        removeCover(videoBox);
+
+        videoSwitch.disabled = true;
+
+        if (videoSwitch.dataset.enable === 'true') {
+          addCover(videoBox);
+          videoSwitch.src = "images/nowebcam.png";
+        }
+
+        // videoSwitch.src = "images/webcam.png";
+        // videoSwitch.dataset.enable = true;
+      } else {
+        videoSwitch.disabled = false;
+
+        if (videoSwitch.dataset.enable === 'true') {
+          removeCover(videoBox);
+          videoSwitch.src = "images/webcam.png";
+        }
+      }
+
+    } else if (receiver.metadata.name === 'audio') {
+      const audioSwitch = $(`#audioSwitch-${receiver.tokenId}`);
+
+      if (isPaused) {
+
+        audioSwitch.disabled = true;
+
+        if (audioSwitch.dataset.enable === 'true') {
+          audioSwitch.src = "images/nomic.png";
+        }
+
+      } else {
+        audioSwitch.disabled = false;
+
+        if (audioSwitch.dataset.enable === 'true') {
+          audioSwitch.src = "images/mic.png";
+        }
       }
     }
+
+
   };
 
 
   session.onmedia = (media, receiver) => {
-    console.log('ontrack');
 
     const stream = streams.get(receiver.tokenId);
     if ($(`#videoBox-${receiver.tokenId}`)) {
@@ -344,9 +389,28 @@ async function initSession(username, room) {
       $('#videoList').append(videoBox);
     }
 
-    if(media.kind === 'video' && receiver.senderPaused){
-      const videoBox  = $(`#videoBox-${receiver.tokenId}`);
-      addCover(videoBox);
+    if (media.kind === 'video') {
+      const videoSwitch = $(`#videoSwitch-${receiver.tokenId}`);
+      videoSwitch.dataset.id = receiver.senderId;
+
+      if (receiver.senderPaused) {
+        const videoBox = $(`#videoBox-${receiver.tokenId}`);
+        addCover(videoBox);
+
+      } else {
+        videoSwitch.disabled = false;
+        videoSwitch.src = "images/webcam.png";
+        videoSwitch.dataset.enable = true;
+      }
+    } else if (media.kind === 'audio') {
+      const audioSwitch = $(`#audioSwitch-${receiver.tokenId}`);
+      audioSwitch.dataset.id = receiver.senderId;
+
+      if (!receiver.senderPaused) {
+        audioSwitch.disabled = false;
+        audioSwitch.src = "images/mic.png";
+        audioSwitch.dataset.enable = true;
+      }
     }
   }
 
